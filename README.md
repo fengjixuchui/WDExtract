@@ -7,11 +7,12 @@
 
 ## Features
 * Unpack VDM containers of Windows Defender/Microsoft Security Essentials;
-* Decrypt VDM container embedded in Malicious Remotal Tool (MRT.exe);
+* Decrypt VDM container embedded in Malicious software Removal Tool (MRT.exe);
 * Extract all PE images from unpacked/decrypted containers on the fly (-e switch):
    * dump VDLLs (Virtual DLLs);
    * dump VFS (Virtual File System) contents;
    * dump signatures auxiliary images;
+   * dump GAPA (Generic Application Level Protocol Analyzer) images used by NIS (Network Inspection System);
    * code can be adapted to dump type specific chunks of database (not implemented);
 * Faster than any script.
 
@@ -20,6 +21,9 @@ https://gist.githubusercontent.com/hfiref0x/e4b97fb7135c9a6f9f0787c07da0a99d/raw
 
 List of WD extracted images, mpasbase.vdm (version 1.291.0.0)
 https://gist.githubusercontent.com/hfiref0x/38e7845304d10c284220461c86491bdf/raw/39c999e59ff2a924932fe6db811555161596b4a7/gistfile1.txt
+
+List of NIS signatures from NisBase.vdm (version 119.0.0.0)
+https://gist.githubusercontent.com/hfiref0x/e9b3f185032fcd2afb31afe7bc9a05bd/raw/9bd9f9cc7c408acaff7b56b810c8597756d55d14/nis_sig.txt
 
 ### Usage
 wdextract file [-e]
@@ -38,7 +42,7 @@ Note: base will be unpacked/decrypted to source directory as %originalname%.extr
 # Build
 
 + Source code written in C;
-+ Built with MSVS 2017 with Windows SDK 17763 installed;
++ Built with MSVS 2017/2019 with Windows SDK 17763/18362 installed;
 + Can be built with previous versions of MSVS and SDK's.
 
 # Related references and tools
@@ -55,4 +59,4 @@ No actual dumped/extracted/unpacked binary data included or will be included in 
 Uses ZLIB Data Compression Library (https://github.com/madler/zlib)
 
 # Authors
-(c) 2019 WDEXTRACT Project
+(c) 2019 - 2020 WDEXTRACT Project

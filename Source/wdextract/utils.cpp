@@ -1,12 +1,12 @@
 /*******************************************************************************
 *
-*  (C) COPYRIGHT AUTHORS, 2019
+*  (C) COPYRIGHT AUTHORS, 2019 - 2020
 *
 *  TITLE:       UTILS.CPP
 *
-*  VERSION:     1.01
+*  VERSION:     1.03
 *
-*  DATE:        19 Apr 2019
+*  DATE:        10 Feb 2020
 *
 *  Program global support routines, ZLib, containers.
 *
@@ -17,8 +17,10 @@
 *
 *******************************************************************************/
 
-#include "pch.h"
+#define ZLIB_WINAPI
+
 #include "global.h"
+#include "zconf.h"
 #include "zlib.h"
 
 #define ZLIB_CHUNK 16384
@@ -27,7 +29,16 @@
 unsigned char ZLib_in[ZLIB_CHUNK];
 unsigned char ZLib_out[ZLIB_CHUNK];
 
-#pragma comment(lib, "zlibwapi.lib")
+#ifdef _M_IX86
+#pragma comment(lib, "zlib/lib/zlibwapi32.lib")
+#elif _M_AMD64
+#pragma comment(lib, "zlib/lib/zlibwapi64.lib")
+#endif
+
+HANDLE FileOpen(LPCWSTR lpFileName, DWORD dwDesiredAccess)
+{
+    return CreateFile(lpFileName, dwDesiredAccess, 0, NULL, OPEN_EXISTING, 0, NULL);
+}
 
 HANDLE FileCreate(LPCWSTR lpFileName)
 {
@@ -44,7 +55,9 @@ ULONG FileWrite(PBYTE InputBuffer, ULONG Size, HANDLE hFile)
 ULONG FileRead(PBYTE OutputBuffer, ULONG Size, HANDLE hFile)
 {
     DWORD read = 0;
-    ReadFile(hFile, OutputBuffer, Size, &read, NULL);
+    if (!ReadFile(hFile, OutputBuffer, Size, &read, NULL))
+        return 0;
+
     return read;
 }
 
@@ -147,8 +160,8 @@ BOOLEAN IsValidContainer(
     _In_ ULONG Size
 )
 {
-    RMDX_HEADER *Header = (RMDX_HEADER*)Container;
-    CDATA_HEADER *DataHeader;
+    RMDX_HEADER* Header = (RMDX_HEADER*)Container;
+    CDATA_HEADER* DataHeader;
 
     __try {
 
@@ -176,8 +189,39 @@ BOOLEAN IsValidContainer(
     return TRUE;
 }
 
+/*
+* IsContainerNIS
+*
+* Purpose:
+*
+* Check if this is NIS container, return TRUE on success.
+*
+*/
+BOOLEAN IsContainerNIS(
+    _In_ PVOID Container)
+{
+    CDATA_HEADER_NIS* NisDataHeader;
+
+    __try {
+
+        NisDataHeader = (PCDATA_HEADER_NIS)Container;
+
+        //utf-8
+        if ((NisDataHeader->Utf8Marker[0] == 0xef) &&
+            (NisDataHeader->Utf8Marker[1] == 0xbb) &&
+            (NisDataHeader->Utf8Marker[2] == 0xbf))
+            return TRUE;
+
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return FALSE;
+    }
+
+    return FALSE;
+}
+
 void XorMemoryBuffer(
-    _In_ unsigned char *p,
+    _In_ unsigned char* p,
     _In_ unsigned char key,
     _In_ size_t length)
 {
@@ -313,7 +357,7 @@ void ShowWin32Error(
                 LocalSize(lpDisplayBuf) / sizeof(CHAR),
                 "%s failed with error %u: %s",
                 Function, ErrorCode, (LPSTR)lpMsgBuf);
-            printf_s((LPSTR)lpDisplayBuf);
+            printf_s("%s", (LPSTR)lpDisplayBuf);
 
             LocalFree(lpDisplayBuf);
         }
@@ -339,10 +383,10 @@ BOOLEAN GetImageSize(
 
     ULONG size = 0;
 
-    IMAGE_OPTIONAL_HEADER32 *Opt32;
-    IMAGE_OPTIONAL_HEADER64 *Opt64;
-    IMAGE_SECTION_HEADER *SectionTableEntry;
-    IMAGE_DATA_DIRECTORY *SecurityDataDirectory;
+    IMAGE_OPTIONAL_HEADER32* Opt32;
+    IMAGE_OPTIONAL_HEADER64* Opt64;
+    IMAGE_SECTION_HEADER* SectionTableEntry;
+    IMAGE_DATA_DIRECTORY* SecurityDataDirectory;
 
     __try {
 
@@ -484,10 +528,10 @@ BOOLEAN ExtractImageNameFromExport(
 )
 {
     PIMAGE_NT_HEADERS NtHeaders = NULL;
-    IMAGE_DATA_DIRECTORY *DataDirectory;
-    IMAGE_EXPORT_DIRECTORY *Exports;
-    IMAGE_OPTIONAL_HEADER32 *Opt32;
-    IMAGE_OPTIONAL_HEADER64 *Opt64;
+    IMAGE_DATA_DIRECTORY* DataDirectory;
+    IMAGE_EXPORT_DIRECTORY* Exports;
+    IMAGE_OPTIONAL_HEADER32* Opt32;
+    IMAGE_OPTIONAL_HEADER64* Opt64;
 
     WORD Machine;
     ULONG ExportDirOffset;
